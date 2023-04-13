@@ -3,7 +3,7 @@
 #include <mpi/mpi.h>
 
 // mpicc main.c -o prueba
-// pirun -n 4 --oversubscribe ./prueba 100 A
+// mpirun -n 4 --oversubscribe ./prueba 100 A
 
 void inicializaCadena(char *cadena, int n) {
     int i;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     char *cadena;
     char letra;
     int size, rank;
-    int c;
+    int resultado;
 
     MPI_Init(&argc, &argv);
 
@@ -38,33 +38,37 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == 0) {
-        printf("Escribe una letra y un tamaño: \n"); scanf("%c %d", &letra, &n);
+        printf("Escribe una letra y un tamaño: \n"); scanf("%c %d", &letra, &n); // Pedimos la letra y el tamaño de la cadena
 
-        cadena = (char *) malloc(n * sizeof(char));
+        cadena = (char *) malloc(n * sizeof(char)); // Reservamos memoria para la cadena
 
-        inicializaCadena(cadena, n);
-        cadena[n] = '\0';
+        inicializaCadena(cadena, n); // Inicializamos la cadena
+        cadena[n] = '\0';  // Añadimos el caracter de fin de cadena
     }
 
-    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    if(rank != 0) {
+    // Enviamos el tamaño de la cadena a todos los procesos
+    // Recordar que las operaciones colectivas deben ejecutarlos todos los procesos
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+    
+    if(rank != 0) { // Reservamos memoria para la cadena en los procesos que no son el principal
         cadena = (char *) malloc(n * sizeof(char));
     }
 
+    // Enviamos la letra y la cadena a todos los procesos
     MPI_Bcast(&letra,1, MPI_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(cadena, n, MPI_CHAR,0, MPI_COMM_WORLD);
 
     for(i = rank; i < n; i += size) {
-        if(cadena[i] == letra) {
+        if(cadena[i] == letra) { // Sumamos 1 al contador si la letra coincide
             count++;
         }
     }
 
-    MPI_Reduce(&count, &c, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    // Sumamos los contadores de cada proceso y almacenamos el resultado en la variable resultado
+    MPI_Reduce(&count, &resultado, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if(rank == 0) {
-        printf("El numero de apariciones de la letra %c es %d\n", letra, c);
+        printf("El numero de apariciones de la letra %c es %d\n", letra, resultado);
     }
 
     free(cadena);
