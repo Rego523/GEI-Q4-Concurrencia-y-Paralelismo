@@ -30,12 +30,13 @@ int main(int argc, char *argv[]) {
     }
 
     int i, n, count=0;
-    char L;
     char *cadena;
-    int size, rank;
+    char L;
+
+    int numprocs, rank;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == 0) {
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
         cadena = (char *) malloc(n * sizeof(char));
         inicializaCadena(cadena, n);
 
-        for(i = 1; i < size; i++) {
+        for(i = 1; i < numprocs; i++) {
             MPI_Send (&n,1, MPI_INT,i,0, MPI_COMM_WORLD); //Aquí hay que enviar a los otros rangos n, L y cadena
             MPI_Send (&L,1, MPI_CHAR,i,0, MPI_COMM_WORLD);
             MPI_Send (cadena,n, MPI_CHAR,i,0, MPI_COMM_WORLD);
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) {
         MPI_Recv (cadena,n, MPI_CHAR, 0,0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    for(i = rank; i < n; i += size) {
+    for(i = rank; i < n; i += numprocs) {
         if(cadena[i] == L) {
             count++;
         }
@@ -71,8 +72,8 @@ int main(int argc, char *argv[]) {
     if(rank == 0) {
         int c = 0;
 
-        for(i = 0; i < size; i++) {
-            MPI_Recv(&count, 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        for(i = 0; i < numprocs; i++) {
+            MPI_Recv(&count, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             c += count; // Sumamos los count de todos los procesos
         }
 

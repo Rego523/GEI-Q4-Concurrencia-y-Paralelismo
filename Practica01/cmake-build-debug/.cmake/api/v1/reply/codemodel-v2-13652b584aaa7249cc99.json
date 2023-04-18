@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "/home/rego/universidad/proyectosGit/paralelismo/p1/cmake-build-debug",
-		"source" : "/home/rego/universidad/proyectosGit/paralelismo/p1"
+		"build" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica01/cmake-build-debug",
+		"source" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica01"
 	},
 	"version" : 
 	{
