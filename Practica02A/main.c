@@ -26,19 +26,19 @@ void inicializaCadena(char *cadena, int n) {
 }
 
 int main(int argc, char *argv[]) {
-    int i, n, count = 0;
+    int i, c, count = 0;
     char *cadena;
-    char letra;
-    int size, rank;
-    int c;
+    int n;
+    char L;
+    int numprocs, rank;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == 0) {
         n = atoi(argv[1]);
-        letra = *argv[2];
+        L = *argv[2];
 
         cadena = (char *) malloc(n * sizeof(char));
 
@@ -52,11 +52,11 @@ int main(int argc, char *argv[]) {
         cadena = (char *) malloc(n * sizeof(char));
     }
 
-    MPI_Bcast(&letra,1, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&L,1, MPI_CHAR, 0, MPI_COMM_WORLD);
     MPI_Bcast(cadena, n, MPI_CHAR,0, MPI_COMM_WORLD);
 
-    for(i = rank; i < n; i += size) {
-        if(cadena[i] == letra) {
+    for(i = rank; i < n; i += numprocs) {
+        if(cadena[i] == L) {
             count++;
         }
     }
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     MPI_Reduce(&count, &c, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if(rank == 0) {
-        printf("El numero de apariciones de la letra %c es %d\n", letra, c);
+        printf("El numero de apariciones de la letra %c es %d\n", L, c);
     }
 
     free(cadena);

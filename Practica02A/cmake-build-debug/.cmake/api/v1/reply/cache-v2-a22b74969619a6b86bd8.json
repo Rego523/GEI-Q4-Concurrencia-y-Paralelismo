@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02/cmake-build-debug"
+			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -475,7 +475,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -535,7 +535,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02"
+			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1115,7 +1115,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02/cmake-build-debug"
+			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A/cmake-build-debug"
 		},
 		{
 			"name" : "p1_IS_TOP_LEVEL",
@@ -1139,7 +1139,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02"
+			"value" : "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A"
 		}
 	],
 	"kind" : "cache",

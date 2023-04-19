@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02/main.c" "CMakeFiles/p1.dir/main.c.o" "gcc" "CMakeFiles/p1.dir/main.c.o.d"
+  "/home/rego/universidad/proyectosGit/GEI-Q4-Paralelismo/Practica02A/main.c" "CMakeFiles/p1.dir/main.c.o" "gcc" "CMakeFiles/p1.dir/main.c.o.d"
   )
 
 # Targets to which this target links.
