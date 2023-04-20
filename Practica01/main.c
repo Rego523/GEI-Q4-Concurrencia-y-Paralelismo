@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <mpi/mpi.h>
 
+// mpicc main.c -o prueba
+// pirun -n 4 --oversubscribe ./prueba 100 A
+
 void inicializaCadena(char *cadena, int n) {
     int i;
 
