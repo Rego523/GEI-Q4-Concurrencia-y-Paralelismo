@@ -3,4 +3,4 @@ project(Practica03 C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Practica03 main.c)
+add_executable(Practica03 similarity.c)
