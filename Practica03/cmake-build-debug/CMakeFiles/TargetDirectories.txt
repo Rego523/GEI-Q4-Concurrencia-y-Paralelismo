@@ -1,0 +1,3 @@
+/home/alexbs01/proyectosGit/GEI-Q4-Paralelismo/Practica03/cmake-build-debug/CMakeFiles/Practica03.dir
+/home/alexbs01/proyectosGit/GEI-Q4-Paralelismo/Practica03/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/alexbs01/proyectosGit/GEI-Q4-Paralelismo/Practica03/cmake-build-debug/CMakeFiles/rebuild_cache.dir
