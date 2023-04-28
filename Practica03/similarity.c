@@ -8,7 +8,7 @@
  * ./similarity salida2
  * diff salida salida2*/
 
-#define DEBUG 0
+#define DEBUG 2
 
 /* Translation of the DNA bases
    A -> 0
@@ -17,8 +17,8 @@
    T -> 3
    N -> 4*/
 
-#define M  1000000 // Number of sequences
-#define N  200  // Number of bases per sequence
+#define M  10 // Number of sequences
+#define N  2 // Number of bases per sequence
 
 int redondearArriba(int x, int y) {
     if( x % y == 0) {
@@ -74,9 +74,9 @@ int main(int argc, char *argv[] ) {
     struct timeval  tv1, tv2;
     int numprocs, rank;
 
-    data1 = (int *) malloc(M*N*sizeof(int));
-    data2 = (int *) malloc(M*N*sizeof(int));
-    result = (int *) malloc(M*sizeof(int));
+    data1 = (int *) malloc(M * N * sizeof(int));
+    data2 = (int *) malloc(M * N * sizeof(int));
+    result = (int *) malloc(M * sizeof(int));
 
 
     /* Initialize Matrices */
@@ -92,25 +92,31 @@ int main(int argc, char *argv[] ) {
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-
-    int *dataRec1 = (int *) malloc(M*N*sizeof(int) / numprocs);
-    int *dataRec2 = (int *) malloc(M*N*sizeof(int) / numprocs);
-    int *resultRec  = (int *) malloc(M*sizeof(int));
     size = redondearArriba(M, numprocs) * N;
 
-    // Dividimos los arrays
-    MPI_Scatter(data1, size, MPI_INT, dataRec1, size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatter(data2, size, MPI_INT, dataRec2, size, MPI_INT, 0, MPI_COMM_WORLD);
+    printf("size %d\n", size);
+
+    // MPI_Scatter(A, block * N, MPI_INT, rank == root? MPI_IN_PLACE : A, block * N, MPI_INT, 0, MPI_COMM_WORLD);
+
+    /* La función de arriba divide A entre los distintos procesos sin necesitar crear una nueva variable, ya que cuando el proceso root ejecute esta línea
+     * los datos que le corresponde se quedarán donde están y si es otro proceso, se mandará al que sea.
+     * Salió de la clase de teoría en el ejercicio de la multiplicación de matrices */
+
+    // Dividimos data1, data2 y result entre el número de procesos
+    MPI_Scatter(data1, size, MPI_INT, rank == 0? MPI_IN_PLACE : data1, size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(data2, size, MPI_INT, rank == 0? MPI_IN_PLACE : data2, size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(result, size, MPI_INT, rank == 0? MPI_IN_PLACE : result, size, MPI_INT, 0, MPI_COMM_WORLD);
 
     gettimeofday(&tv1, NULL);
 
-    for(i = 0; i < M; i++) {
-        resultRec[i] = 0;
+    for(i = rank; i < M / numprocs; i += numprocs) {
+        result[i] = 0;
         for(j = 0; j < N; j++) {
-            resultRec[i] += base_distance(dataRec1[i * N + j], dataRec2[i * N + j]);
+            result[i] += base_distance(data1[i * N + j], data2[i * N + j]);
         }
     }
 
+    MPI_Gather(result, size, MPI_INT, result, size, MPI_INT, 0, MPI_COMM_WORLD);
 
 
     gettimeofday(&tv2, NULL);
@@ -120,13 +126,13 @@ int main(int argc, char *argv[] ) {
     /* Display result */
     if(DEBUG == 1) {
         int checksum = 0;
-        for(i=0;i<M;i++) {
+        for(i = 0; i < M; i++) {
             checksum += result[i];
         }
         printf("Checksum: %d\n ", checksum);
     } else if(DEBUG == 2) {
-        for(i=0;i<M;i++) {
-            printf(" %d \t ",result[i]);
+        for(i = 0; i < M; i++) {
+            printf("Result i %d: %d \n", i, result[i]);
         }
     } else {
         printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
