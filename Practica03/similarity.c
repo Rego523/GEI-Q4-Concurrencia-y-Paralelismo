@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include <mpi/mpi.h>
+
 /* mpirun -n X ./mpi-sim > salida
  * ./similarity salida2
  * diff salida salida2*/
@@ -17,6 +19,14 @@
 
 #define M  1000000 // Number of sequences
 #define N  200  // Number of bases per sequence
+
+int redondearArriba(int x, int y) {
+    if( x % y == 0) {
+        return (x / y);
+    } else {
+        return (x / y) + 1;
+    }
+}
 
 unsigned int g_seed = 0;
 
@@ -57,54 +67,73 @@ int base_distance(int base1, int base2) {
 
 int main(int argc, char *argv[] ) {
 
-      int i, j;
-      int *data1, *data2;
-      int *result;
-      struct timeval  tv1, tv2;
+    int i, j;
+    int size;
+    int *data1, *data2;
+    int *result;
+    struct timeval  tv1, tv2;
+    int numprocs, rank;
 
-      data1 = (int *) malloc(M*N*sizeof(int));
-      data2 = (int *) malloc(M*N*sizeof(int));
-      result = (int *) malloc(M*sizeof(int));
+    data1 = (int *) malloc(M*N*sizeof(int));
+    data2 = (int *) malloc(M*N*sizeof(int));
+    result = (int *) malloc(M*sizeof(int));
 
-      /* Initialize Matrices */
-      for(i=0;i<M;i++) {
-            for(j=0;j<N;j++) {
-                  /* random with 20% gap proportion */
-                  data1[i*N+j] = fast_rand();
-                  data2[i*N+j] = fast_rand();
-            }
-      }
 
-      gettimeofday(&tv1, NULL);
+    /* Initialize Matrices */
+    for(i = 0; i < M; i++) {
+        for(j = 0; j < N; j++) {
+              /* random with 20% gap proportion */
+              data1[i * N + j] = fast_rand();
+              data2[i * N + j] = fast_rand();
+        }
+    }
 
-      for(i=0;i<M;i++) {
-            result[i]=0;
-            for(j=0;j<N;j++) {
-                result[i] += base_distance(data1[i*N+j], data2[i*N+j]);
-            }
-      }
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-      gettimeofday(&tv2, NULL);
 
-      int microseconds = (tv2.tv_usec - tv1.tv_usec)+ 1000000 * (tv2.tv_sec - tv1.tv_sec);
+    int *dataRec1 = (int *) malloc(M*N*sizeof(int) / numprocs);
+    int *dataRec2 = (int *) malloc(M*N*sizeof(int) / numprocs);
+    int *resultRec  = (int *) malloc(M*sizeof(int));
+    size = redondearArriba(M, numprocs) * N;
 
-      /* Display result */
-      if(DEBUG == 1) {
-            int checksum = 0;
-            for(i=0;i<M;i++) {
-                checksum += result[i];
-            }
-            printf("Checksum: %d\n ", checksum);
-      } else if(DEBUG == 2) {
-            for(i=0;i<M;i++) {
-                printf(" %d \t ",result[i]);
-            }
-      } else {
-            printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
-      }
+    // Dividimos los arrays
+    MPI_Scatter(data1, size, MPI_INT, dataRec1, size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(data2, size, MPI_INT, dataRec2, size, MPI_INT, 0, MPI_COMM_WORLD);
 
-      free(data1); free(data2); free(result);
+    gettimeofday(&tv1, NULL);
 
-      return 0;
+    for(i = 0; i < M; i++) {
+        resultRec[i] = 0;
+        for(j = 0; j < N; j++) {
+            resultRec[i] += base_distance(dataRec1[i * N + j], dataRec2[i * N + j]);
+        }
+    }
+
+
+
+    gettimeofday(&tv2, NULL);
+
+    int microseconds = (tv2.tv_usec - tv1.tv_usec)+ 1000000 * (tv2.tv_sec - tv1.tv_sec);
+
+    /* Display result */
+    if(DEBUG == 1) {
+        int checksum = 0;
+        for(i=0;i<M;i++) {
+            checksum += result[i];
+        }
+        printf("Checksum: %d\n ", checksum);
+    } else if(DEBUG == 2) {
+        for(i=0;i<M;i++) {
+            printf(" %d \t ",result[i]);
+        }
+    } else {
+        printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
+    }
+
+    free(data1); free(data2); free(result);
+    MPI_Finalize();
+    return 0;
 }
 
