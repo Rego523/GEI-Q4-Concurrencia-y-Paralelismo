@@ -11,7 +11,7 @@
 // mpicc similarity.c -o prueba -lm
 // mpirun -n 3 --oversubscribe ./prueba
 
-#define DEBUG 1
+#define DEBUG 0
 
 /* Translation of the DNA bases
    A -> 0
@@ -20,8 +20,8 @@
    T -> 3
    N -> 4*/
 
-#define M  10 // Number of sequences
-#define N  2 // Number of bases per sequence
+#define M  1000000 // Number of sequences
+#define N  200 // Number of bases per sequence
 
 int redondearArriba(int x, int y) {
     if( x % y == 0) {
@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
             filas++;
     }
 
-
     if(rank == 0) {
         data1 = (int *) malloc(filas * numprocs * N * sizeof(int));
         data2 = (int *) malloc(filas * numprocs * N * sizeof(int));
@@ -102,19 +101,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-
     dataR1 = (int *) malloc(filas* N * sizeof(int));
     dataR2 = (int *) malloc(filas * N * sizeof(int));
     resultR = (int *) malloc(filas * sizeof(int));
 
-    //printf("filas %d\n", (int) filas);
-    //printf("sendsize %d\n", sendsize);
+    gettimeofday(&tv1, NULL);
 
     MPI_Scatter(data1, filas * N, MPI_INT, dataR1, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(data2, filas * N, MPI_INT, dataR2, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
 
-    //gettimeofday(&tv1, NULL);
 
     for(i = 0; i < filas; i++) {
         resultR[i] = 0;
@@ -124,21 +119,12 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /*
-    for(i = rank; i < M / numprocs; i += numprocs) {
-        result[i] = 0;
-        for(j = 0; j < N; j++) {
-            result[i] += base_distance(data1[i * N + j], data2[i * N + j]);
-        }
-    }
-     */
-
     MPI_Gather(resultR,  filas, MPI_INT, result,  filas, MPI_INT, 0, MPI_COMM_WORLD);
 
 
-    //gettimeofday(&tv2, NULL);
+    gettimeofday(&tv2, NULL);
 
-    //int microseconds = (tv2.tv_usec - tv1.tv_usec)+ 1000000 * (tv2.tv_sec - tv1.tv_sec);
+    int microseconds = (tv2.tv_usec - tv1.tv_usec) + 1000000 * (tv2.tv_sec - tv1.tv_sec);
 
     /* Display result */
     if(DEBUG == 1) {
@@ -157,7 +143,7 @@ int main(int argc, char *argv[]) {
             printf("Result i %d: %d \n", i, result[i]);
         }
     } else {
-        //printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
+        printf ("Process %d, Time (seconds) = %lf\n", rank, (double) microseconds/1E6);
     }
 
     if(rank == 0) {
@@ -174,35 +160,3 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-/*
-    if(filas * numprocs == M) {
-        for (i = 0; i < filas; i++) {
-            resultR[i] = 0;
-            for (j = 0; j < N; j++) {
-                resultR[i] += base_distance(dataR1[i * N + j],
-                                            dataR2[i * N + j]);
-            }
-        }
-
-    } else {
-        if(rank == numprocs - 1) {
-            aux = filas * numprocs - M;
-            for (i = 0; i < aux; i++) {
-                resultR[i] = 0;
-                for (j = 0; j < N; j++) {
-                    resultR[i] += base_distance(dataR1[i * N + j],
-                                                dataR2[i * N + j]);
-                }
-            }
-
-        } else {
-
-            for (i = 0; i < filas; i++) {
-                resultR[i] = 0;
-                for (j = 0; j < N; j++) {
-                    resultR[i] += base_distance(dataR1[i * N + j],
-                                                dataR2[i * N + j]);
-                }
-            }
-        }
-    }*/
