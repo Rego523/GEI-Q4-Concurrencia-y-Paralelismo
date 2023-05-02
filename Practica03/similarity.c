@@ -8,7 +8,10 @@
  * ./similarity salida2
  * diff salida salida2*/
 
-#define DEBUG 2
+// mpicc similarity.c -o prueba -lm
+// mpirun -n 3 --oversubscribe ./prueba
+
+#define DEBUG 1
 
 /* Translation of the DNA bases
    A -> 0
@@ -58,88 +61,148 @@ int base_distance(int base1, int base2) {
             return 1;
       }
 
-      if((base2 == 2) && (base1 == 1)) {
-            return 1;
-      }
-
       return 2;
 }
 
-int main(int argc, char *argv[] ) {
+int main(int argc, char *argv[]) {
 
     int i, j;
-    int size;
-    int *data1, *data2;
-    int *result;
+    int sendsize;
+    int *data1, *data2, *dataR1, *dataR2;
+    int *result, *resultR;
     struct timeval  tv1, tv2;
     int numprocs, rank;
-
-    data1 = (int *) malloc(M * N * sizeof(int));
-    data2 = (int *) malloc(M * N * sizeof(int));
-    result = (int *) malloc(M * sizeof(int));
-
-
-    /* Initialize Matrices */
-    for(i = 0; i < M; i++) {
-        for(j = 0; j < N; j++) {
-              /* random with 20% gap proportion */
-              data1[i * N + j] = fast_rand();
-              data2[i * N + j] = fast_rand();
-        }
-    }
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    size = redondearArriba(M, numprocs) * N;
+    int filas = M / numprocs;
 
-    printf("size %d\n", size);
+        //int filas = redondearArriba(M, numprocs);
 
-    // MPI_Scatter(A, block * N, MPI_INT, rank == root? MPI_IN_PLACE : A, block * N, MPI_INT, 0, MPI_COMM_WORLD);
+        if(M % numprocs != 0) {
+            filas++;
+    }
 
-    /* La función de arriba divide A entre los distintos procesos sin necesitar crear una nueva variable, ya que cuando el proceso root ejecute esta línea
-     * los datos que le corresponde se quedarán donde están y si es otro proceso, se mandará al que sea.
-     * Salió de la clase de teoría en el ejercicio de la multiplicación de matrices */
 
-    // Dividimos data1, data2 y result entre el número de procesos
-    MPI_Scatter(data1, size, MPI_INT, rank == 0? MPI_IN_PLACE : data1, size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatter(data2, size, MPI_INT, rank == 0? MPI_IN_PLACE : data2, size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatter(result, size, MPI_INT, rank == 0? MPI_IN_PLACE : result, size, MPI_INT, 0, MPI_COMM_WORLD);
+    if(rank == 0) {
+        data1 = (int *) malloc(filas * numprocs * N * sizeof(int));
+        data2 = (int *) malloc(filas * numprocs * N * sizeof(int));
+        result = (int *) malloc(filas * numprocs * sizeof(int));
 
-    gettimeofday(&tv1, NULL);
 
+        /* Initialize Matrices */
+        for(i = 0; i < M; i++) {
+            for (j = 0; j < N; j++) {
+                /* random with 20% gap proportion */
+                data1[i * N + j] = fast_rand();
+                data2[i * N + j] = fast_rand();
+            }
+        }
+    }
+
+
+
+    dataR1 = (int *) malloc(filas* N * sizeof(int));
+    dataR2 = (int *) malloc(filas * N * sizeof(int));
+    resultR = (int *) malloc(filas * sizeof(int));
+
+    //printf("filas %d\n", (int) filas);
+    //printf("sendsize %d\n", sendsize);
+
+    MPI_Scatter(data1, filas * N, MPI_INT, dataR1, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatter(data2, filas * N, MPI_INT, dataR2, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
+
+    //gettimeofday(&tv1, NULL);
+
+    for(i = 0; i < filas; i++) {
+        resultR[i] = 0;
+        for(j = 0; j < N; j++) {
+            resultR[i] += base_distance(dataR1[i * N + j], dataR2[i * N + j]);
+        }
+    }
+
+
+    /*
     for(i = rank; i < M / numprocs; i += numprocs) {
         result[i] = 0;
         for(j = 0; j < N; j++) {
             result[i] += base_distance(data1[i * N + j], data2[i * N + j]);
         }
     }
+     */
 
-    MPI_Gather(result, size, MPI_INT, result, size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(resultR,  filas, MPI_INT, result,  filas, MPI_INT, 0, MPI_COMM_WORLD);
 
 
-    gettimeofday(&tv2, NULL);
+    //gettimeofday(&tv2, NULL);
 
-    int microseconds = (tv2.tv_usec - tv1.tv_usec)+ 1000000 * (tv2.tv_sec - tv1.tv_sec);
+    //int microseconds = (tv2.tv_usec - tv1.tv_usec)+ 1000000 * (tv2.tv_sec - tv1.tv_sec);
 
     /* Display result */
     if(DEBUG == 1) {
-        int checksum = 0;
-        for(i = 0; i < M; i++) {
-            checksum += result[i];
+        if(rank == 0 ){
+            int checksum = 0;
+
+            for(i = 0; i < M; i++) {
+                checksum += result[i];
+            }
+
+            printf("Checksum: %d\n ", checksum);
         }
-        printf("Checksum: %d\n ", checksum);
+
     } else if(DEBUG == 2) {
         for(i = 0; i < M; i++) {
             printf("Result i %d: %d \n", i, result[i]);
         }
     } else {
-        printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
+        //printf ("Time (seconds) = %lf\n", (double) microseconds/1E6);
     }
 
-    free(data1); free(data2); free(result);
+    if(rank == 0) {
+        free(data1);
+        free(data2);
+        free(result);
+    }
+
+    free(dataR1);
+    free(dataR2);
+    free(resultR);
+
     MPI_Finalize();
     return 0;
 }
 
+/*
+    if(filas * numprocs == M) {
+        for (i = 0; i < filas; i++) {
+            resultR[i] = 0;
+            for (j = 0; j < N; j++) {
+                resultR[i] += base_distance(dataR1[i * N + j],
+                                            dataR2[i * N + j]);
+            }
+        }
+
+    } else {
+        if(rank == numprocs - 1) {
+            aux = filas * numprocs - M;
+            for (i = 0; i < aux; i++) {
+                resultR[i] = 0;
+                for (j = 0; j < N; j++) {
+                    resultR[i] += base_distance(dataR1[i * N + j],
+                                                dataR2[i * N + j]);
+                }
+            }
+
+        } else {
+
+            for (i = 0; i < filas; i++) {
+                resultR[i] = 0;
+                for (j = 0; j < N; j++) {
+                    resultR[i] += base_distance(dataR1[i * N + j],
+                                                dataR2[i * N + j]);
+                }
+            }
+        }
+    }*/
