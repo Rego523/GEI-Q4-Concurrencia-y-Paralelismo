@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     int sendsize;
     int *data1, *data2, *dataR1, *dataR2;
     int *result, *resultR;
-    struct timeval  tv1, tv2;
+    struct timeval  tv1, tv2, tComunicacion1, tComunicacion2, tComputacion1, tComputacion2;
     int numprocs, rank;
 
     MPI_Init(&argc, &argv);
@@ -106,10 +106,14 @@ int main(int argc, char *argv[]) {
     resultR = (int *) malloc(filas * sizeof(int));
 
     gettimeofday(&tv1, NULL);
+    gettimeofday(&tComunicacion1, NULL);
 
     MPI_Scatter(data1, filas * N, MPI_INT, dataR1, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(data2, filas * N, MPI_INT, dataR2, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
 
+    gettimeofday(&tComunicacion2, NULL);
+
+    gettimeofday(&tComputacion1, NULL);
 
     for(i = 0; i < filas; i++) {
         resultR[i] = 0;
@@ -118,13 +122,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    gettimeofday(&tComputacion2, NULL);
+
 
     MPI_Gather(resultR,  filas, MPI_INT, result,  filas, MPI_INT, 0, MPI_COMM_WORLD);
 
 
     gettimeofday(&tv2, NULL);
 
-    int microseconds = (tv2.tv_usec - tv1.tv_usec) + 1000000 * (tv2.tv_sec - tv1.tv_sec);
+    int microsecondsTotal = (tv2.tv_usec - tv1.tv_usec) + 1000000 * (tv2.tv_sec - tv1.tv_sec);
+    int microsecondsComunicacion = (tComunicacion2.tv_usec - tComunicacion1.tv_usec) + 1000000 * (tComunicacion2.tv_sec - tComunicacion1.tv_sec);
+    int microsecondsComputacion = (tComputacion2.tv_usec - tComputacion1.tv_usec) + 1000000 * (tComputacion2.tv_sec - tComputacion1.tv_sec);
 
     /* Display result */
     if(DEBUG == 1) {
@@ -143,7 +151,11 @@ int main(int argc, char *argv[]) {
             printf("Result i %d: %d \n", i, result[i]);
         }
     } else {
-        printf ("Process %d, Time (seconds) = %lf\n", rank, (double) microseconds/1E6);
+        printf ("Process %d, Time (seconds) = %lf\n", rank, (double) microsecondsTotal/1E6);
+        MPI_Barrier(MPI_COMM_WORLD);
+        printf ("Process %d, Comunication time (seconds) = %lf\n", rank, (double) microsecondsComunicacion/1E6);
+        MPI_Barrier(MPI_COMM_WORLD);
+        printf ("Process %d, Computation time (seconds) = %lf\n", rank, (double) microsecondsComputacion/1E6);
     }
 
     if(rank == 0) {
