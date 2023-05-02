@@ -4,14 +4,17 @@
 
 #include <mpi/mpi.h>
 
-/* mpirun -n X ./mpi-sim > salida
- * ./similarity salida2
- * diff salida salida2*/
+// DEBUG 1 - 0
+// mpicc similarity.c -o prueba
+// mpirun -n 3 ./prueba
 
-// mpicc similarity.c -o prueba -lm
-// mpirun -n 3 --oversubscribe ./prueba
+// DEBUG 2
+// mpicc similarity.c -o prueba
+// mpirun -n 4 ./prueba >> hola2
+// ./prueba >> hola
+// diff hola hola2
 
-#define DEBUG 2
+#define DEBUG 1
 
 /* Translation of the DNA bases
    A -> 0
@@ -59,7 +62,6 @@ int base_distance(int base1, int base2) {
 int main(int argc, char *argv[]) {
 
     int i, j;
-    int sendsize;
     int *data1, *data2, *dataR1, *dataR2;
     int *result, *resultR;
     struct timeval  tv1, tv2, tComunicacion1, tComunicacion2, tComputacion1, tComputacion2;
@@ -71,16 +73,14 @@ int main(int argc, char *argv[]) {
 
     int filas = M / numprocs;
 
-        //int filas = redondearArriba(M, numprocs);
-
-        if(M % numprocs != 0) {
+    if(M % numprocs != 0) {
             filas++;
     }
 
     if(rank == 0) {
-        data1 = (int *) malloc(filas * numprocs * N * sizeof(int));
-        data2 = (int *) malloc(filas * numprocs * N * sizeof(int));
-        result = (int *) malloc(filas * numprocs * sizeof(int));
+        data1 = (int *) malloc(M * N * sizeof(int));
+        data2 = (int *) malloc(M * N * sizeof(int));
+        result = (int *) malloc(M * sizeof(int));
 
 
         /* Initialize Matrices */
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    dataR1 = (int *) malloc(filas* N * sizeof(int));
+    dataR1 = (int *) malloc(filas * N * sizeof(int));
     dataR2 = (int *) malloc(filas * N * sizeof(int));
     resultR = (int *) malloc(filas * sizeof(int));
 
