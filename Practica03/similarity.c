@@ -11,7 +11,7 @@
 // mpicc similarity.c -o prueba -lm
 // mpirun -n 3 --oversubscribe ./prueba
 
-#define DEBUG 0
+#define DEBUG 2
 
 /* Translation of the DNA bases
    A -> 0
@@ -22,14 +22,6 @@
 
 #define M  1000000 // Number of sequences
 #define N  200 // Number of bases per sequence
-
-int redondearArriba(int x, int y) {
-    if( x % y == 0) {
-        return (x / y);
-    } else {
-        return (x / y) + 1;
-    }
-}
 
 unsigned int g_seed = 0;
 
@@ -106,12 +98,14 @@ int main(int argc, char *argv[]) {
     resultR = (int *) malloc(filas * sizeof(int));
 
     gettimeofday(&tv1, NULL);
+
     gettimeofday(&tComunicacion1, NULL);
 
     MPI_Scatter(data1, filas * N, MPI_INT, dataR1, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(data2, filas * N, MPI_INT, dataR2, filas * N, MPI_INT, 0, MPI_COMM_WORLD);
 
     gettimeofday(&tComunicacion2, NULL);
+
 
     gettimeofday(&tComputacion1, NULL);
 
@@ -124,14 +118,19 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&tComputacion2, NULL);
 
+    int microsecondsComunicacion = (tComunicacion2.tv_usec - tComunicacion1.tv_usec) + 1000000 * (tComunicacion2.tv_sec - tComunicacion1.tv_sec);
+
+    gettimeofday(&tComunicacion1, NULL);
 
     MPI_Gather(resultR,  filas, MPI_INT, result,  filas, MPI_INT, 0, MPI_COMM_WORLD);
+
+    gettimeofday(&tComunicacion2, NULL);
 
 
     gettimeofday(&tv2, NULL);
 
     int microsecondsTotal = (tv2.tv_usec - tv1.tv_usec) + 1000000 * (tv2.tv_sec - tv1.tv_sec);
-    int microsecondsComunicacion = (tComunicacion2.tv_usec - tComunicacion1.tv_usec) + 1000000 * (tComunicacion2.tv_sec - tComunicacion1.tv_sec);
+    microsecondsComunicacion += (tComunicacion2.tv_usec - tComunicacion1.tv_usec) + 1000000 * (tComunicacion2.tv_sec - tComunicacion1.tv_sec);
     int microsecondsComputacion = (tComputacion2.tv_usec - tComputacion1.tv_usec) + 1000000 * (tComputacion2.tv_sec - tComputacion1.tv_sec);
 
     /* Display result */
@@ -147,15 +146,18 @@ int main(int argc, char *argv[]) {
         }
 
     } else if(DEBUG == 2) {
-        for(i = 0; i < M; i++) {
-            printf("Result i %d: %d \n", i, result[i]);
+        if(rank == 0) {
+            for(i = 0; i < M; i++) {
+                printf("Result i %d: %d \n", i, result[i]);
+            }
         }
+
     } else {
-        printf ("Process %d, Time (seconds) = %lf\n", rank, (double) microsecondsTotal/1E6);
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf ("Process %d, Comunication time (seconds) = %lf\n", rank, (double) microsecondsComunicacion/1E6);
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf ("Process %d, Computation time (seconds) = %lf\n", rank, (double) microsecondsComputacion/1E6);
+        printf("Process %d, Time (seconds) = %lf,\tComunication time = %lf,\tComputation time = %lf\n",
+                rank,
+                (double) microsecondsTotal/1E6,
+                (double) microsecondsComunicacion/1E6,
+                (double) microsecondsComputacion/1E6);
     }
 
     if(rank == 0) {
