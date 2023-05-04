@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
     } else if(DEBUG == 2) {
         if(rank == 0) {
             for(i = 0; i < M; i++) {
-                printf("Result i %d: %d \n", i, result[i]);
+                printf(" %d \t ",result[i]);
             }
         }
 
